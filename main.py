@@ -1,20 +1,32 @@
-import asyncio
-from converters import *
+from __future__ import annotations
 
-def main():    
-    amount = int(input('Введите значение в USD: \n'))
-    
-    converter = UsdRubConverter()
-    print(f"{amount} USD to RUB: {converter.convert_usd_to_rub(amount)}")
-    
-    converter = UsdEurConverter()
-    print(f"{amount} USD to EUR: {converter.convert_usd_to_eur(amount)}")
-    
-    converter = UsdGbpConverter()
-    print(f"{amount} USD to GBP: {converter.convert_usd_to_gbp(amount)}")
-    
-    converter = UsdCnyConverter()
-    print(f"{amount} USD to CNY: {converter.convert_usd_to_cny(amount)}")
+from converters import CurrencyConverter, ExchangeRateApiProvider, ExchangeRatesError
+
+
+def _read_amount_usd() -> float:
+    raw = input("Введите значение в USD:\n").strip().replace(",", ".")
+    try:
+        amount = float(raw)
+    except ValueError as e:
+        raise ValueError("Некорректное число") from e
+    if amount < 0:
+        raise ValueError("Сумма должна быть неотрицательной")
+    return amount
+
+
+def main() -> None:
+    amount = _read_amount_usd()
+
+    converter = CurrencyConverter(provider=ExchangeRateApiProvider(), base_currency="USD")
+    targets = ["RUB", "EUR", "GBP", "CNY"]
+
+    for target in targets:
+        try:
+            converted = converter.convert(amount, target)
+        except ExchangeRatesError as e:
+            print(f"Ошибка получения курса для {target}: {e}")
+            continue
+        print(f"{amount:g} USD to {target}: {converted:g}")
 
 if __name__ == "__main__":
     main()
